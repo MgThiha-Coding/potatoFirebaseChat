@@ -43,7 +43,11 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => ProfilePage()));
               },
-              icon: CircleAvatar(child: const Icon(Icons.person)))
+              icon: CircleAvatar(
+                  child: const Icon(
+                Icons.person,
+                color: Colors.orange,
+              )))
         ],
       ),
       body: _buildUserList(),
@@ -75,7 +79,7 @@ class _HomePageState extends State<HomePage> {
 
     if (_auth.currentUser!.email != data['email']) {
       return Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 7),
         child: Card(
           elevation: 3,
           child: ListTile(
@@ -84,9 +88,21 @@ class _HomePageState extends State<HomePage> {
               Icons.message,
               color: Colors.blue,
             ),
-            title: Text(
-              '${data['email']}',
-              style: TextStyle(color: Colors.grey[800]),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.blue,
+                  child: Icon(
+                    Icons.person_2_outlined,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  '${data['email']}',
+                  style: TextStyle(color: Colors.grey[800]),
+                ),
+              ],
             ),
             onTap: () {
               Navigator.push(
