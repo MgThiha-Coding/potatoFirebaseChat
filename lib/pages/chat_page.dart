@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:potato/components/my_text_field.dart';
+import 'package:potato/core/const/app_images.dart';
 import 'package:potato/services/chat/chat_service.dart';
 
 class ChatPage extends StatefulWidget {
@@ -29,13 +30,30 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  String extractUsername(String email) {
+    // Split the email by '@' and take the first part
+    return email.split('@')[0];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.receiverUserEmail,
-          style: TextStyle(color: Colors.blueGrey),
+        backgroundColor: const Color.fromARGB(255, 243, 149, 8),
+        title: Row(
+          children: [
+            CircleAvatar(
+              child: Image.asset(AppImages.potato),
+            ),
+            SizedBox(
+              width: 10,
+            ),
+            Text(
+              extractUsername(
+                  widget.receiverUserEmail), // Display username without domain
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
         ),
       ),
       body: Column(
