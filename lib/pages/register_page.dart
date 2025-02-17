@@ -65,23 +65,27 @@ class _RegisterPageState extends State<RegisterPage> {
                   height: 25,
                 ),
                 MyTextField(
-                    controller: emailController,
-                    hintText: "Email",
-                    obsureText: false),
+                  controller: emailController,
+                  hintText: "Email",
+                ),
                 const SizedBox(
                   height: 10,
                 ),
                 MyTextField(
-                    controller: passwordController,
-                    hintText: "Password",
-                    obsureText: true),
+                  obscureText: true,
+                  showVisibilityIcon: true,
+                  controller: passwordController,
+                  hintText: "Password",
+                ),
                 const SizedBox(
                   height: 10,
                 ),
                 MyTextField(
-                    controller: confirmPasswordController,
-                    hintText: "Confirm Password",
-                    obsureText: true),
+                  obscureText: true,
+                  showVisibilityIcon: true,
+                  controller: confirmPasswordController,
+                  hintText: "Confirm Password",
+                ),
                 const SizedBox(
                   height: 25,
                 ),

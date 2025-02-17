@@ -1,33 +1,6 @@
-/*
-import 'package:flutter/material.dart';
-
-class ChatPage extends StatefulWidget {
-  final String receiverUserEmail;
-  final String receiverUserID;
-  const ChatPage(
-      {super.key,
-      required this.receiverUserEmail,
-      required this.receiverUserID});
-
-  @override
-  State<ChatPage> createState() => _ChatPageState();
-}
-
-class _ChatPageState extends State<ChatPage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.receiverUserEmail),
-      ),
-    );
-  }
-}
-*/
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:potato/components/chat_bubble.dart';
 import 'package:potato/components/my_text_field.dart';
 import 'package:potato/services/chat/chat_service.dart';
 
@@ -60,7 +33,10 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.receiverUserEmail),
+        title: Text(
+          widget.receiverUserEmail,
+          style: TextStyle(color: Colors.blueGrey),
+        ),
       ),
       body: Column(
         children: [
@@ -108,13 +84,15 @@ class _ChatPageState extends State<ChatPage> {
     String message = data['message'] ?? 'No message content';
 
     var alignment = (data['senderId'] == _firebaseAuth.currentUser!.uid)
-        ? Alignment.centerLeft
-        : Alignment.centerRight;
-
+        ? Alignment.centerRight
+        : Alignment.centerLeft;
+    var color = (data['senderId'] == _firebaseAuth.currentUser!.uid)
+        ? Colors.blue
+        : Colors.green;
     return Container(
       alignment: alignment,
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
         child: Column(
           crossAxisAlignment:
               (data['senderId'] == _firebaseAuth.currentUser!.uid)
@@ -125,8 +103,31 @@ class _ChatPageState extends State<ChatPage> {
                   ? MainAxisAlignment.start
                   : MainAxisAlignment.end,
           children: [
-            Text(senderEmail),
-            ChatBubble(message: message),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(width: 1, color: Colors.green)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    senderEmail,
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '   ${message}',
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  )
+                ],
+              ),
+            ),
+
+            // ChatBubble(message: message),
           ],
         ),
       ),
@@ -134,22 +135,35 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildMessageInput() {
-    return Row(
-      children: [
-        Expanded(
-            child: MyTextField(
-                controller: _messageController,
-                hintText: 'Enter Message',
-                obsureText: false)),
-        IconButton(
-            onPressed: () {
-              sentMessage();
-            },
-            icon: Icon(
-              Icons.arrow_upward,
-              size: 40,
-            ))
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Container(
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              width: 2,
+              color: Colors.green,
+            )),
+        child: Row(
+          children: [
+            Expanded(
+                child: MyTextField(
+              controller: _messageController,
+              hintText: 'Enter Message',
+            )),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: FloatingActionButton(
+                shape: CircleBorder(),
+                onPressed: () {
+                  sentMessage();
+                },
+                child: Icon(Icons.send),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:potato/core/const/app_images.dart';
 import 'package:potato/pages/chat_page.dart';
+import 'package:potato/pages/profile_page.dart';
 import 'package:potato/services/auth_service.dart';
 import 'package:provider/provider.dart';
 
@@ -37,31 +38,18 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         actions: [
-          IconButton(onPressed: signOut, icon: const Icon(Icons.logout))
+          IconButton(
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => ProfilePage()));
+              },
+              icon: CircleAvatar(child: const Icon(Icons.person)))
         ],
       ),
       body: _buildUserList(),
     );
   }
 
-  /*
-  Widget _buildUserList() {
-    return StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Text('Error');
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Text('Loading...');
-          }
-          return ListView(
-              children: snapshot.data!.docs
-                  .map<Widget>((doc) => _buildUserListItem(doc))
-                  .toList());
-        });
-  }
-  */
   Widget _buildUserList() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('users').snapshots(),
@@ -72,10 +60,6 @@ class _HomePageState extends State<HomePage> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Text('Loading...');
         }
-
-        // 🔥 Debugging: Print snapshot data
-        print(
-            "Firestore Snapshot Data: ${snapshot.data!.docs.map((doc) => doc.data()).toList()}");
 
         return ListView(
           children: snapshot.data!.docs
@@ -90,20 +74,31 @@ class _HomePageState extends State<HomePage> {
     Map<String, dynamic> data = document.data()! as Map<String, dynamic>;
 
     if (_auth.currentUser!.email != data['email']) {
-      return ListTile(
-        title: Text(
-          '${data['email']}',
-          style: TextStyle(color: Colors.red),
+      return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Card(
+          elevation: 3,
+          child: ListTile(
+            minTileHeight: 80,
+            trailing: Icon(
+              Icons.message,
+              color: Colors.blue,
+            ),
+            title: Text(
+              '${data['email']}',
+              style: TextStyle(color: Colors.grey[800]),
+            ),
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ChatPage(
+                            receiverUserEmail: data['email'],
+                            receiverUserID: data['uid'],
+                          )));
+            },
+          ),
         ),
-        onTap: () {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => ChatPage(
-                        receiverUserEmail: data['email'],
-                        receiverUserID: data['uid'],
-                      )));
-        },
       );
     } else {
       return Container();
