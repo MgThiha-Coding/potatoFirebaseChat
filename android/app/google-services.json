@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "719475423670",
+    "project_id": "potato-database-ff706",
+    "storage_bucket": "potato-database-ff706.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:719475423670:android:fe3362503a918d2545a917",
+        "android_client_info": {
+          "package_name": "com.example.potato"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWMEeTjTL5SvoT7raJMFGBGbeGIvsc1RI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
