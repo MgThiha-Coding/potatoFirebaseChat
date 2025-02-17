@@ -38,8 +38,9 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[300],
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 243, 149, 8),
+        backgroundColor: Colors.grey[400],
         title: Row(
           children: [
             CircleAvatar(
@@ -110,7 +111,7 @@ class _ChatPageState extends State<ChatPage> {
     return Container(
       alignment: alignment,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         child: Column(
           crossAxisAlignment:
               (data['senderId'] == _firebaseAuth.currentUser!.uid)
@@ -122,21 +123,22 @@ class _ChatPageState extends State<ChatPage> {
                   : MainAxisAlignment.end,
           children: [
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(width: 1, color: Colors.green)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    senderEmail,
+                    extractUsername(senderEmail),
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '   ${message}',
+                    ' $message',
                     style: TextStyle(
                       color: Colors.white,
                     ),
@@ -154,33 +156,27 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _buildMessageInput() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Container(
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              width: 2,
-              color: Colors.green,
-            )),
-        child: Row(
-          children: [
-            Expanded(
-                child: MyTextField(
-              controller: _messageController,
-              hintText: 'Enter Message',
-            )),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: FloatingActionButton(
-                shape: CircleBorder(),
-                onPressed: () {
-                  sentMessage();
-                },
-                child: Icon(Icons.send),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Row(
+        children: [
+          Expanded(
+              child: MyTextField(
+            controller: _messageController,
+            hintText: 'Enter Message',
+          )),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: FloatingActionButton(
+              shape: CircleBorder(),
+              onPressed: () {
+                sentMessage();
+              },
+              child: Icon(
+                Icons.send,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

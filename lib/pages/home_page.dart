@@ -5,6 +5,7 @@ import 'package:potato/core/const/app_images.dart';
 import 'package:potato/pages/chat_page.dart';
 import 'package:potato/pages/profile_page.dart';
 import 'package:potato/services/auth_service.dart';
+
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,6 +17,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
   void signOut() {
     final authService = Provider.of<AuthService>(context, listen: false);
     authService.signOut();
@@ -24,7 +26,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[300],
       appBar: AppBar(
+        backgroundColor: Colors.grey[300],
         title: Row(
           children: [
             Image.asset(
@@ -38,16 +42,19 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         actions: [
-          IconButton(
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => ProfilePage()));
-              },
-              icon: CircleAvatar(
-                  child: const Icon(
-                Icons.person,
-                color: Colors.orange,
-              )))
+          Padding(
+            padding: const EdgeInsets.all(5.0),
+            child: IconButton(
+                onPressed: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => ProfilePage()));
+                },
+                icon: CircleAvatar(
+                    child: const Icon(
+                  Icons.person,
+                  color: Colors.orange,
+                ))),
+          )
         ],
       ),
       body: _buildUserList(),
@@ -59,10 +66,10 @@ class _HomePageState extends State<HomePage> {
       stream: FirebaseFirestore.instance.collection('users').snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const Text('Error fetching data');
+          return Center(child: const Text('Error fetching data'));
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Text('Loading...');
+          return Center(child: const Text('Loading...'));
         }
 
         return ListView(
@@ -79,39 +86,46 @@ class _HomePageState extends State<HomePage> {
 
     if (_auth.currentUser!.email != data['email']) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 1),
         child: Card(
-          elevation: 3,
+          elevation: 2, // Slight elevation for modern feel
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20), // Rounded corners
+          ),
           child: ListTile(
-            minTileHeight: 80,
+            contentPadding: EdgeInsets.symmetric(
+                horizontal: 15, vertical: 10), // Added padding inside ListTile
+            minVerticalPadding: 10, // Added padding to adjust height
             trailing: Icon(
               Icons.message,
               color: Colors.blue,
             ),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.blue,
-                  child: Icon(
-                    Icons.person_2_outlined,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  '${data['email']}',
-                  style: TextStyle(color: Colors.grey[800]),
-                ),
-              ],
+            leading: CircleAvatar(
+              radius: 30, // Slightly larger circle for better look
+              backgroundColor: Colors.blueAccent, // Colorful background
+              child: Icon(
+                Icons.person_2_outlined,
+                color: Colors.white,
+                size: 30,
+              ),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                '${data['email']}',
+                style: TextStyle(color: Colors.grey[800], fontSize: 14),
+              ),
             ),
             onTap: () {
               Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => ChatPage(
-                            receiverUserEmail: data['email'],
-                            receiverUserID: data['uid'],
-                          )));
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatPage(
+                    receiverUserEmail: data['email'],
+                    receiverUserID: data['uid'],
+                  ),
+                ),
+              );
             },
           ),
         ),

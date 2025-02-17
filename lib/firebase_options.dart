@@ -50,11 +50,11 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBWMEeTjTL5SvoT7raJMFGBGbeGIvsc1RI',
-    appId: '1:719475423670:android:fe3362503a918d2545a917',
-    messagingSenderId: '719475423670',
-    projectId: 'potato-database-ff706',
-    storageBucket: 'potato-database-ff706.firebasestorage.app',
+    apiKey: 'AIzaSyAljLoynJx5wmi6BaXo_qZCL7rfeOyRcdE',
+    appId: '1:172559601824:android:c5ebbf3b9962f9e008f9c5',
+    messagingSenderId: '172559601824',
+    projectId: 'nat-base',
+    storageBucket: 'nat-base.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(

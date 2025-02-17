@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:potato/firebase_options.dart';
 import 'package:potato/services/auth/auth_gate.dart';
 import 'package:potato/services/auth_service.dart';
@@ -8,19 +9,43 @@ import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth packag
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // await setLanguageCode();
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print("Firebase initialized successfully");
+  } catch (e) {
+    print("Error initializing Firebase: $e");
+    // Optionally, you could show a loading screen or alert to the user.
+  }
 
-  runApp(ChangeNotifierProvider(
-    create: (context) => AuthService(),
-    child: MyApp(),
-  ));
+  // Set language code for FirebaseAuth
+  await setLanguageCode();
+
+  // Lock screen orientation to portrait mode
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => AuthService(),
+      child: MyApp(),
+    ),
+  );
 }
 
+// Set language code for FirebaseAuth
 Future<void> setLanguageCode() async {
-  await FirebaseAuth.instance.setLanguageCode(
-      'en'); // Set language code to English (or your preferred language)
+  try {
+    await FirebaseAuth.instance.setLanguageCode('en');
+    print("Language code set to English");
+  } catch (e) {
+    print("Error setting language code: $e");
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -28,6 +53,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: AuthGate());
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: AuthGate(), // This widget handles authentication states
+    );
   }
 }

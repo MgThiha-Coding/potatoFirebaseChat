@@ -23,6 +23,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.orange,
         title: const Text('Your Potato Profile'),
       ),
       body: Column(
@@ -37,9 +38,9 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               Positioned(
                 bottom: -50,
-                left: 20,
+                left: 30,
                 child: CircleAvatar(
-                  radius: 80,
+                  radius: 50,
                   child: Image.asset(AppImages.potato),
                 ),
               ),
