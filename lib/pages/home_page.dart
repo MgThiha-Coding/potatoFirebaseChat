@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:potato/core/const/app_images.dart';
 import 'package:potato/pages/chat_page.dart';
 import 'package:potato/services/auth_service.dart';
 import 'package:provider/provider.dart';
@@ -23,7 +24,18 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home Page'),
+        title: Row(
+          children: [
+            Image.asset(
+              AppImages.potato,
+              scale: 17,
+            ),
+            SizedBox(
+              width: 8,
+            ),
+            Text('Potato'),
+          ],
+        ),
         actions: [
           IconButton(onPressed: signOut, icon: const Icon(Icons.logout))
         ],
@@ -32,31 +44,39 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /*
+  Widget _buildUserList() {
+    return StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('users').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Text('Error');
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Text('Loading...');
+          }
+          return ListView(
+              children: snapshot.data!.docs
+                  .map<Widget>((doc) => _buildUserListItem(doc))
+                  .toList());
+        });
+  }
+  */
   Widget _buildUserList() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('users').snapshots(),
       builder: (context, snapshot) {
-        // Handle errors
         if (snapshot.hasError) {
-          print("Error: ${snapshot.error}");
-          return const Text('An error occurred');
+          return const Text('Error fetching data');
         }
-
-        // Handle loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Text('Loading...');
         }
 
-        // Check if data is empty
-        if (snapshot.data == null || snapshot.data!.docs.isEmpty) {
-          return const Center(
-            child: Text('No users available'),
-          );
-        }
+        // 🔥 Debugging: Print snapshot data
+        print(
+            "Firestore Snapshot Data: ${snapshot.data!.docs.map((doc) => doc.data()).toList()}");
 
-        // Display the list of users
         return ListView(
           children: snapshot.data!.docs
               .map<Widget>((doc) => _buildUserListItem(doc))
@@ -68,10 +88,12 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildUserListItem(DocumentSnapshot document) {
     Map<String, dynamic> data = document.data()! as Map<String, dynamic>;
+
     if (_auth.currentUser!.email != data['email']) {
       return ListTile(
         title: Text(
-          data['email'],
+          '${data['email']}',
+          style: TextStyle(color: Colors.red),
         ),
         onTap: () {
           Navigator.push(

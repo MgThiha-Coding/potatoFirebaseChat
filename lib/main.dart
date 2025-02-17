@@ -11,7 +11,7 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Set language code to avoid the warning
-  // await setLanguageCode();
+  await setLanguageCode();
 
   runApp(ChangeNotifierProvider(
     create: (context) => AuthService(),
