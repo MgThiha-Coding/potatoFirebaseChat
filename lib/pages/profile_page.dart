@@ -48,6 +48,9 @@ class _ProfilePageState extends State<ProfilePage> {
   // Method to delete the user account from Firebase Authentication
   Future<void> deleteUserAccount() async {
     try {
+      // Sign out the user first
+      await _auth.signOut();
+
       // Get the current user
       User? user = _auth.currentUser;
 
@@ -58,10 +61,8 @@ class _ProfilePageState extends State<ProfilePage> {
         // Delete user from Firebase Auth
         await user.delete();
 
-        // After deleting, sign out the user and redirect them to login screen
-        await _auth.signOut();
-        Navigator.pushReplacementNamed(
-            context, '/login'); // Navigate to login or splash screen
+        // Redirect them to the login screen (since the account is deleted, they should not remain logged in)
+        Navigator.pushReplacementNamed(context, '/login');
 
         print("Account deleted successfully");
       }
@@ -156,6 +157,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             TextButton(
                               onPressed: () {
+                                _auth.signOut();
+                                deleteUserAccount();
                                 Navigator.of(context).pop(true); // Yes
                               },
                               child: const Text("Yes"),

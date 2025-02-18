@@ -108,6 +108,7 @@ class _HomePageState extends State<HomePage> {
             subtitle: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
+                overflow: TextOverflow.ellipsis,
                 '${data['email']}',
                 style: TextStyle(color: Colors.grey[800], fontSize: 14),
               ),

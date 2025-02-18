@@ -215,12 +215,12 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   // Delete the message
-  void deleteMessage(String messageId) async {
+  void deleteMessage(String messageId) {
     try {
       // Ensure the correct document is being deleted
       print("Attempting to delete message with ID: $messageId");
 
-      await FirebaseFirestore.instance
+      FirebaseFirestore.instance
           .collection('chat_rooms')
           .doc(_getChatRoomId())
           .collection('messages')
