@@ -30,6 +30,21 @@ class _ChatPageState extends State<ChatPage> {
     markMessagesAsRead();
   }
 
+  void reactToMessage(String messageId, String emoji) {
+    FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .doc(_getChatRoomId())
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      'currentReaction': emoji, // Update the reaction
+    }).then((value) {
+      print("Reaction updated successfully!");
+    }).catchError((error) {
+      print("Error updating reaction: $error");
+    });
+  }
+
   // Scroll listener to track if the user is at the bottom
   void _scrollListener() {
     if (_scrollController.position.pixels ==
@@ -65,22 +80,6 @@ class _ChatPageState extends State<ChatPage> {
     return ids.join("_");
   }
 
-  void reactToMessage(String messageId, String emoji) {
-    FirebaseFirestore.instance
-        .collection('chat_rooms')
-        .doc(_getChatRoomId())
-        .collection('messages')
-        .doc(messageId)
-        .update({
-      'currentReaction': emoji, // Update the reaction
-    }).then((value) {
-      // Optional: you can print success message or handle any post-update actions
-      print("Reaction updated successfully!");
-    }).catchError((error) {
-      print("Error updating reaction: $error");
-    });
-  }
-
   void sendMessage() async {
     if (_messageController.text.isNotEmpty) {
       String chatRoomId = _getChatRoomId();
@@ -102,7 +101,6 @@ class _ChatPageState extends State<ChatPage> {
       _messageController.clear();
 
       // Trigger a scroll to the bottom after message is sent
-      _scrollToBottom = true;
       if (_scrollController.hasClients) {
         // Delay scroll until the message is rendered
         Future.delayed(Duration(milliseconds: 300), () {
@@ -125,7 +123,7 @@ class _ChatPageState extends State<ChatPage> {
             .collection('chat_rooms')
             .doc(_getChatRoomId())
             .collection('messages')
-            .orderBy('timestamp', descending: true) // Order by latest first
+            .orderBy('timestamp', descending: false)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -135,19 +133,26 @@ class _ChatPageState extends State<ChatPage> {
             return Center(child: CircularProgressIndicator());
           }
 
-          // Scroll to the bottom when a new message is sent and the user is at the bottom
-          if (_scrollToBottom && _scrollController.hasClients) {
-            Future.delayed(Duration(milliseconds: 300), () {
-              _scrollController
-                  .jumpTo(_scrollController.position.maxScrollExtent);
-            });
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(child: Text("No messages yet"));
           }
 
+          var messageCount = snapshot.data!.docs.length;
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_scrollToBottom && _scrollController.hasClients) {
+              _scrollController.animateTo(
+                _scrollController.position.maxScrollExtent,
+                duration: Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
+              _scrollToBottom = false; // Reset flag after scrolling
+            }
+          });
+
           return ListView.builder(
-            reverse:
-                true, // Reverse the list so that the latest message is at the bottom
             controller: _scrollController,
-            itemCount: snapshot.data!.docs.length,
+            itemCount: messageCount,
             itemBuilder: (context, index) {
               var document = snapshot.data!.docs[index];
               return _buildMessageItem(document);
@@ -176,6 +181,11 @@ class _ChatPageState extends State<ChatPage> {
 
     double screenWidth = MediaQuery.of(context).size.width;
 
+    // Reverse the color of the email text based on the container color
+    Color? emailTextColor = (color == Colors.blue)
+        ? const Color.fromARGB(255, 255, 252, 252)
+        : Colors.yellow[300];
+
     return Container(
       alignment: alignment,
       child: Padding(
@@ -187,22 +197,33 @@ class _ChatPageState extends State<ChatPage> {
           children: [
             // Only show the delete button for the sender
             if (senderId == _firebaseAuth.currentUser!.uid)
-              IconButton(
-                icon: Icon(Icons.delete),
-                onPressed: () {
+              GestureDetector(
+                onTap: () {
                   deleteMessage(messageId);
                 },
-                color: Colors.grey, // Color of the delete icon
+                child: Icon(
+                  Icons.delete,
+                  color: Colors.grey, // Color of the delete icon
+                ),
               ),
             // Message Box
+            SizedBox(
+              width: 7,
+            ),
             Container(
               constraints: BoxConstraints(
                 maxWidth:
                     screenWidth * 0.75, // Set a max width for the message box
               ),
               decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(12),
+                color: color, // Set the container color (sender or receiver)
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(17), // Top-left rounded corner
+                  topRight: Radius.circular(4), // Sharp top-right corner
+                  bottomLeft: Radius.circular(4), // Sharp bottom-left corner
+                  bottomRight:
+                      Radius.circular(17), // Bottom-right rounded corner
+                ),
               ),
               padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
               child: Column(
@@ -213,14 +234,16 @@ class _ChatPageState extends State<ChatPage> {
                     style: TextStyle(
                       fontSize: screenWidth * 0.035,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: emailTextColor, // Set the reversed color here
                     ),
                   ),
                   SizedBox(height: 1),
                   Text(
                     message,
                     style: TextStyle(
-                        fontSize: screenWidth * 0.035, color: Colors.white),
+                      fontSize: screenWidth * 0.035,
+                      color: Colors.white,
+                    ),
                     maxLines: null,
                     overflow: TextOverflow.visible,
                   ),
@@ -244,23 +267,20 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                   SizedBox(height: 1),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       Text(
                         formatTimestamp(timestamp),
                         style: TextStyle(
-                            fontSize: screenWidth * 0.030,
-                            color: Colors.white70),
+                          fontSize: screenWidth * 0.030,
+                          color: Colors.white70,
+                        ),
                       ),
                       SizedBox(width: 20),
                       // Add reactions only for messages from others
                       if (senderId != _firebaseAuth.currentUser!.uid) ...[
-                        IconButton(
-                          icon: Icon(
-                            Icons.favorite,
-                            size: 22,
-                            color: Colors.red,
-                          ),
-                          onPressed: () {
+                        GestureDetector(
+                          onTap: () {
                             if (currentReaction == '❤️') {
                               reactToMessage(
                                   messageId, ''); // Remove love reaction
@@ -269,15 +289,10 @@ class _ChatPageState extends State<ChatPage> {
                                   messageId, '❤️'); // Add love reaction
                             }
                           },
-                          iconSize: screenWidth * 0.07,
+                          child: Text('❤️'),
                         ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.emoji_emotions,
-                            size: 22,
-                            color: Colors.yellow,
-                          ),
-                          onPressed: () {
+                        GestureDetector(
+                          onTap: () {
                             if (currentReaction == '😂') {
                               reactToMessage(
                                   messageId, ''); // Remove haha reaction
@@ -286,7 +301,43 @@ class _ChatPageState extends State<ChatPage> {
                                   messageId, '😂'); // Add haha reaction
                             }
                           },
-                          iconSize: screenWidth * 0.07,
+                          child: Text('😂'),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            if (currentReaction == '😞') {
+                              reactToMessage(
+                                  messageId, ''); // Remove sad reaction
+                            } else {
+                              reactToMessage(
+                                  messageId, '😞'); // Add sad reaction
+                            }
+                          },
+                          child: Text('😞'),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            if (currentReaction == '😢') {
+                              reactToMessage(
+                                  messageId, ''); // Remove cry reaction
+                            } else {
+                              reactToMessage(
+                                  messageId, '😢'); // Add cry reaction
+                            }
+                          },
+                          child: Text('😢'),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            if (currentReaction == '🙏') {
+                              reactToMessage(
+                                  messageId, ''); // Remove praying reaction
+                            } else {
+                              reactToMessage(
+                                  messageId, '🙏'); // Add praying reaction
+                            }
+                          },
+                          child: Text('🙏'),
                         ),
                       ],
                     ],
@@ -294,7 +345,6 @@ class _ChatPageState extends State<ChatPage> {
                 ],
               ),
             ),
-            // Reaction Buttons
           ],
         ),
       ),
@@ -314,32 +364,40 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.receiverUserEmail),
+        title: Text(
+          widget.receiverUserEmail,
+          style: TextStyle(fontSize: 15),
+        ),
       ),
       body: Column(
         children: [
           Expanded(child: _buildMessageList()),
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _messageController,
                     decoration: InputDecoration(
-                      hintText: 'Type a message',
+                      hintText: 'Type a message...',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(7),
                       ),
                     ),
                     style: TextStyle(
                         fontSize: MediaQuery.of(context).size.width * 0.04),
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.send),
-                  onPressed: sendMessage,
-                  iconSize: MediaQuery.of(context).size.width * 0.07,
+                SizedBox(
+                  width: 6,
+                ),
+                GestureDetector(
+                  onTap: sendMessage,
+                  child: Icon(
+                    Icons.send,
+                    size: MediaQuery.of(context).size.width * 0.08,
+                  ),
                 ),
               ],
             ),

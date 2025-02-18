@@ -35,24 +35,37 @@ class _HomePageState extends State<HomePage> {
               scale: 17,
             ),
             SizedBox(
-              width: 8,
+              width: 2,
             ),
-            Text('Potato'),
+            Text(
+              'Potato',
+              style: TextStyle(
+                fontSize: 26, // Adjust the font size
+                fontWeight: FontWeight.w500, // Make it bold
+                color:
+                    Colors.white, // Choose your color (white for this example)
+              ),
+            )
           ],
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.all(5.0),
             child: IconButton(
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => ProfilePage()));
-                },
-                icon: CircleAvatar(
-                    child: const Icon(
-                  Icons.person,
-                  color: Colors.orange,
-                ))),
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => ProfilePage()));
+              },
+              icon: CircleAvatar(
+                radius: 30, // Slightly larger circle for better look
+                backgroundColor: Colors.blueAccent, // Colorful background
+                child: Icon(
+                  Icons.person_2_outlined,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+            ),
           )
         ],
       ),
@@ -85,11 +98,11 @@ class _HomePageState extends State<HomePage> {
 
     if (_auth.currentUser!.email != data['email']) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 1),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
         child: Card(
           elevation: 2, // Slight elevation for modern feel
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20), // Rounded corners
+            borderRadius: BorderRadius.circular(7), // Rounded corners
           ),
           child: ListTile(
             contentPadding: EdgeInsets.symmetric(
@@ -97,10 +110,10 @@ class _HomePageState extends State<HomePage> {
             minVerticalPadding: 10, // Added padding to adjust height
 
             leading: Padding(
-              padding: const EdgeInsets.all(5.0),
+              padding: const EdgeInsets.all(3.0),
               child: CircleAvatar(
                 radius: 30, // Slightly larger circle for better look
-                backgroundColor: Colors.blueAccent, // Colorful background
+                backgroundColor: Colors.orange, // Colorful background
                 child: Icon(
                   Icons.person_2_outlined,
                   color: Colors.white,
@@ -143,11 +156,10 @@ class _HomePageState extends State<HomePage> {
                   return SizedBox.shrink(); // No unread messages
                 } else {
                   return Positioned(
-                    top: -4,
-                    right: -4,
                     child: Container(
                       width: 10,
                       height: 10,
+                      margin: EdgeInsets.symmetric(vertical: 2, horizontal: 6),
                       decoration: BoxDecoration(
                         color: Colors.green,
                         shape: BoxShape.circle,
