@@ -5,7 +5,6 @@ import 'package:potato/core/const/app_images.dart';
 import 'package:potato/pages/chat_page.dart';
 import 'package:potato/pages/profile_page.dart';
 import 'package:potato/services/auth_service.dart';
-
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -96,10 +95,7 @@ class _HomePageState extends State<HomePage> {
             contentPadding: EdgeInsets.symmetric(
                 horizontal: 15, vertical: 10), // Added padding inside ListTile
             minVerticalPadding: 10, // Added padding to adjust height
-            trailing: Icon(
-              Icons.message,
-              color: Colors.blue,
-            ),
+
             leading: CircleAvatar(
               radius: 30, // Slightly larger circle for better look
               backgroundColor: Colors.blueAccent, // Colorful background
@@ -127,6 +123,34 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
             },
+            // Add a red notification dot if there's an unread message
+            isThreeLine: true,
+            trailing: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('chat_rooms')
+                  .doc('${_auth.currentUser!.uid}_${data['uid']}')
+                  .collection('messages')
+                  .where('isRead', isEqualTo: false)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return SizedBox.shrink(); // No unread messages
+                } else {
+                  return Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
           ),
         ),
       );
