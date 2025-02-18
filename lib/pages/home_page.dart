@@ -93,21 +93,26 @@ class _HomePageState extends State<HomePage> {
           ),
           child: ListTile(
             contentPadding: EdgeInsets.symmetric(
-                horizontal: 15, vertical: 10), // Added padding inside ListTile
+                horizontal: 4, vertical: 4), // Added padding inside ListTile
             minVerticalPadding: 10, // Added padding to adjust height
 
-            leading: CircleAvatar(
-              radius: 30, // Slightly larger circle for better look
-              backgroundColor: Colors.blueAccent, // Colorful background
-              child: Icon(
-                Icons.person_2_outlined,
-                color: Colors.white,
-                size: 30,
+            leading: Padding(
+              padding: const EdgeInsets.all(5.0),
+              child: CircleAvatar(
+                radius: 30, // Slightly larger circle for better look
+                backgroundColor: Colors.blueAccent, // Colorful background
+                child: Icon(
+                  Icons.person_2_outlined,
+                  color: Colors.white,
+                  size: 30,
+                ),
               ),
             ),
+
             subtitle: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(2.0),
               child: Text(
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 '${data['email']}',
                 style: TextStyle(color: Colors.grey[800], fontSize: 14),

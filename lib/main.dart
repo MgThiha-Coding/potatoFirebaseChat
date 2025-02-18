@@ -1,30 +1,30 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:potato/firebase_options.dart';
 import 'package:potato/services/auth/auth_gate.dart';
 import 'package:potato/services/auth_service.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth package
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    print("Firebase initialized successfully");
-  } catch (e) {
-    print("Error initializing Firebase: $e");
-    // Optionally, you could show a loading screen or alert to the user.
-  }
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  print("Firebase initialized successfully");
 
   // Set language code for FirebaseAuth
   await setLanguageCode();
 
-  // Lock screen orientation to portrait mode
+  // Initialize Remote Config
+  await setupRemoteConfig();
+
+  // Lock screen orientation
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -36,6 +36,28 @@ void main() async {
       child: MyApp(),
     ),
   );
+}
+
+// 🔹 Setup Firebase Remote Config
+Future<void> setupRemoteConfig() async {
+  final remoteConfig = FirebaseRemoteConfig.instance;
+
+  try {
+    await remoteConfig.setConfigSettings(
+      RemoteConfigSettings(
+        fetchTimeout: const Duration(seconds: 10), // Timeout for fetching
+        minimumFetchInterval: const Duration(hours: 1), // Update interval
+      ),
+    );
+
+    await remoteConfig.fetchAndActivate();
+
+    // Get the latest app version from Firebase
+    String latestVersion = remoteConfig.getString("latest_version");
+    print("Latest app version: $latestVersion");
+  } catch (e) {
+    print("Failed to fetch remote config: $e");
+  }
 }
 
 // Set language code for FirebaseAuth
@@ -55,7 +77,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: AuthGate(), // This widget handles authentication states
+      home: AuthGate(),
     );
   }
 }

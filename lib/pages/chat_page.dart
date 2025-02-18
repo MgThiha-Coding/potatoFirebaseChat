@@ -21,14 +21,26 @@ class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final ScrollController _scrollController = ScrollController();
+  bool _scrollToBottom = false; // Flag to manage when to scroll to the bottom
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_scrollListener);
     markMessagesAsRead();
   }
 
-  // Mark messages as read when the chat page is opened
+  // Scroll listener to track if the user is at the bottom
+  void _scrollListener() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      _scrollToBottom = true; // Set flag to true when the user is at the bottom
+    } else {
+      _scrollToBottom =
+          false; // Reset the flag when the user is not at the bottom
+    }
+  }
+
   void markMessagesAsRead() async {
     var chatRoomId = _getChatRoomId();
     var messagesRef = FirebaseFirestore.instance
@@ -44,7 +56,6 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  // Get the chat room ID based on the sender and receiver IDs
   String _getChatRoomId() {
     List<String> ids = [
       _firebaseAuth.currentUser!.uid,
@@ -54,10 +65,26 @@ class _ChatPageState extends State<ChatPage> {
     return ids.join("_");
   }
 
-  // Send a message
+  void reactToMessage(String messageId, String emoji) {
+    FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .doc(_getChatRoomId())
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      'currentReaction': emoji, // Update the reaction
+    }).then((value) {
+      // Optional: you can print success message or handle any post-update actions
+      print("Reaction updated successfully!");
+    }).catchError((error) {
+      print("Error updating reaction: $error");
+    });
+  }
+
   void sendMessage() async {
     if (_messageController.text.isNotEmpty) {
       String chatRoomId = _getChatRoomId();
+      // Add message to Firestore
       await FirebaseFirestore.instance
           .collection('chat_rooms')
           .doc(chatRoomId)
@@ -69,26 +96,27 @@ class _ChatPageState extends State<ChatPage> {
         'senderEmail': _firebaseAuth.currentUser!.email,
         'timestamp': Timestamp.now(),
         'isRead': false,
+        'reactions': [],
       });
 
       _messageController.clear();
 
-      // Scroll to the bottom after sending a message
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
+      // Trigger a scroll to the bottom after message is sent
+      _scrollToBottom = true;
+      if (_scrollController.hasClients) {
+        // Delay scroll until the message is rendered
+        Future.delayed(Duration(milliseconds: 300), () {
           _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-        }
-      });
+        });
+      }
     }
   }
 
-  // Format the timestamp
   String formatTimestamp(Timestamp timestamp) {
     var format = DateFormat('hh:mm a');
     return format.format(timestamp.toDate());
   }
 
-  // Build the message list
   Widget _buildMessageList() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3),
@@ -97,7 +125,7 @@ class _ChatPageState extends State<ChatPage> {
             .collection('chat_rooms')
             .doc(_getChatRoomId())
             .collection('messages')
-            .orderBy('timestamp')
+            .orderBy('timestamp', descending: true) // Order by latest first
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -107,19 +135,23 @@ class _ChatPageState extends State<ChatPage> {
             return Center(child: CircularProgressIndicator());
           }
 
-          // Scroll to the bottom when new data is received
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (_scrollController.hasClients) {
+          // Scroll to the bottom when a new message is sent and the user is at the bottom
+          if (_scrollToBottom && _scrollController.hasClients) {
+            Future.delayed(Duration(milliseconds: 300), () {
               _scrollController
                   .jumpTo(_scrollController.position.maxScrollExtent);
-            }
-          });
+            });
+          }
 
-          return ListView(
+          return ListView.builder(
+            reverse:
+                true, // Reverse the list so that the latest message is at the bottom
             controller: _scrollController,
-            children: snapshot.data!.docs
-                .map((document) => _buildMessageItem(document))
-                .toList(),
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) {
+              var document = snapshot.data!.docs[index];
+              return _buildMessageItem(document);
+            },
           );
         },
       ),
@@ -132,46 +164,41 @@ class _ChatPageState extends State<ChatPage> {
     String senderEmail = data['senderEmail'] ?? 'Unknown Sender';
     Timestamp timestamp = data['timestamp'] ?? Timestamp.now();
     String messageId = document.id;
+    String currentReaction = data['currentReaction'] ?? '';
+    String senderId = data['senderId'] ?? '';
 
-    var alignment = (data['senderId'] == _firebaseAuth.currentUser!.uid)
+    var alignment = (senderId == _firebaseAuth.currentUser!.uid)
         ? Alignment.centerRight
         : Alignment.centerLeft;
-    var color = (data['senderId'] == _firebaseAuth.currentUser!.uid)
+    var color = (senderId == _firebaseAuth.currentUser!.uid)
         ? Colors.blue
         : Colors.green;
+
+    double screenWidth = MediaQuery.of(context).size.width;
 
     return Container(
       alignment: alignment,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         child: Row(
-          mainAxisAlignment:
-              (data['senderId'] == _firebaseAuth.currentUser!.uid)
-                  ? MainAxisAlignment.end
-                  : MainAxisAlignment.start,
+          mainAxisAlignment: (senderId == _firebaseAuth.currentUser!.uid)
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
           children: [
-            // Only show the delete option for the sender
-            if (data['senderId'] == _firebaseAuth.currentUser!.uid)
-              PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert),
-                onSelected: (String value) {
-                  if (value == 'Delete') {
-                    // Debugging: print messageId before deletion
-                    print("Deleting message with ID: $messageId");
-                    deleteMessage(messageId);
-                  }
+            // Only show the delete button for the sender
+            if (senderId == _firebaseAuth.currentUser!.uid)
+              IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: () {
+                  deleteMessage(messageId);
                 },
-                itemBuilder: (BuildContext context) => [
-                  PopupMenuItem<String>(
-                    value: 'Delete',
-                    child: Text('Delete'),
-                  ),
-                ],
+                color: Colors.grey, // Color of the delete icon
               ),
+            // Message Box
             Container(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width *
-                    0.75, // Limit width to 75% of screen width
+                maxWidth:
+                    screenWidth * 0.75, // Set a max width for the message box
               ),
               decoration: BoxDecoration(
                 color: color,
@@ -181,62 +208,106 @@ class _ChatPageState extends State<ChatPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Sender email (optional)
                   Text(
                     senderEmail,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: screenWidth * 0.035,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 5),
-                  // Message content with overflow handling
+                  SizedBox(height: 1),
                   Text(
                     message,
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                    maxLines: null, // Allow multiple lines
-                    overflow:
-                        TextOverflow.visible, // Handle overflow gracefully
+                    style: TextStyle(
+                        fontSize: screenWidth * 0.035, color: Colors.white),
+                    maxLines: null,
+                    overflow: TextOverflow.visible,
                   ),
-                  SizedBox(height: 5),
-                  // Timestamp
-                  Text(
-                    formatTimestamp(timestamp),
-                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                  SizedBox(height: 1),
+                  // Current Reaction Display
+                  Row(
+                    children: [
+                      if (currentReaction.isNotEmpty)
+                        GestureDetector(
+                          onTap: () {
+                            if (currentReaction.isNotEmpty) {
+                              reactToMessage(messageId, ''); // Remove reaction
+                            }
+                          },
+                          child: Text(
+                            currentReaction,
+                            style: TextStyle(fontSize: screenWidth * 0.038),
+                          ),
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: 1),
+                  Row(
+                    children: [
+                      Text(
+                        formatTimestamp(timestamp),
+                        style: TextStyle(
+                            fontSize: screenWidth * 0.030,
+                            color: Colors.white70),
+                      ),
+                      SizedBox(width: 20),
+                      // Add reactions only for messages from others
+                      if (senderId != _firebaseAuth.currentUser!.uid) ...[
+                        IconButton(
+                          icon: Icon(
+                            Icons.favorite,
+                            size: 22,
+                            color: Colors.red,
+                          ),
+                          onPressed: () {
+                            if (currentReaction == '❤️') {
+                              reactToMessage(
+                                  messageId, ''); // Remove love reaction
+                            } else {
+                              reactToMessage(
+                                  messageId, '❤️'); // Add love reaction
+                            }
+                          },
+                          iconSize: screenWidth * 0.07,
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.emoji_emotions,
+                            size: 22,
+                            color: Colors.yellow,
+                          ),
+                          onPressed: () {
+                            if (currentReaction == '😂') {
+                              reactToMessage(
+                                  messageId, ''); // Remove haha reaction
+                            } else {
+                              reactToMessage(
+                                  messageId, '😂'); // Add haha reaction
+                            }
+                          },
+                          iconSize: screenWidth * 0.07,
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
             ),
+            // Reaction Buttons
           ],
         ),
       ),
     );
   }
 
-  // Delete the message
-  void deleteMessage(String messageId) {
-    try {
-      // Ensure the correct document is being deleted
-      print("Attempting to delete message with ID: $messageId");
-
-      FirebaseFirestore.instance
-          .collection('chat_rooms')
-          .doc(_getChatRoomId())
-          .collection('messages')
-          .doc(messageId)
-          .delete();
-
-      // Provide feedback to the user
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Message deleted successfully')),
-      );
-    } catch (e) {
-      // Handle the error and provide feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting message: $e')),
-      );
-    }
+  Future<void> deleteMessage(String messageId) async {
+    await FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .doc(_getChatRoomId())
+        .collection('messages')
+        .doc(messageId)
+        .delete();
   }
 
   @override
@@ -261,11 +332,14 @@ class _ChatPageState extends State<ChatPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
+                    style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width * 0.04),
                   ),
                 ),
                 IconButton(
                   icon: Icon(Icons.send),
                   onPressed: sendMessage,
+                  iconSize: MediaQuery.of(context).size.width * 0.07,
                 ),
               ],
             ),
