@@ -10,20 +10,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
   print("Firebase initialized successfully");
-
   // Set language code for FirebaseAuth
   await setLanguageCode();
-
   // Initialize Remote Config
   await setupRemoteConfig();
-
   // Lock screen orientation
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -41,17 +36,16 @@ void main() async {
 // 🔹 Setup Firebase Remote Config
 Future<void> setupRemoteConfig() async {
   final remoteConfig = FirebaseRemoteConfig.instance;
-
+  // hello
+  // hi
   try {
     await remoteConfig.setConfigSettings(
       RemoteConfigSettings(
-        fetchTimeout: const Duration(seconds: 10), // Timeout for fetching
-        minimumFetchInterval: const Duration(hours: 1), // Update interval
+        fetchTimeout: const Duration(seconds: 10),
+        minimumFetchInterval: const Duration(hours: 1),
       ),
     );
-
     await remoteConfig.fetchAndActivate();
-
     // Get the latest app version from Firebase
     String latestVersion = remoteConfig.getString("latest_version");
     print("Latest app version: $latestVersion");
