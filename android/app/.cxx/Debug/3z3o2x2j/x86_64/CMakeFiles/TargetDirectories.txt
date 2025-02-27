@@ -1,0 +1,2 @@
+C:/Users/Eagle/Desktop/Flutter Projects/potato_chat/android/app/.cxx/Debug/3z3o2x2j/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/Eagle/Desktop/Flutter Projects/potato_chat/android/app/.cxx/Debug/3z3o2x2j/x86_64/CMakeFiles/rebuild_cache.dir
